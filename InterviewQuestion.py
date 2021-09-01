@@ -4,6 +4,15 @@ Created on Wed Sep  1 13:14:14 2021
 
 @author: samte
 """
+
+'Question 2'
+def exist():
+    if 'v' in globals():
+        return print('v is defined')
+    else:
+        return print('v is not defined')        
+exist()
+
 'Question 6'
 import re
 
