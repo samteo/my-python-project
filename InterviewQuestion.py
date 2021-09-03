@@ -16,12 +16,46 @@ exist()
 
 
 
-'Question3'
+
+
+
+
+import os
+git ls-files "./*.py" | wc -l
+git ls-files | xargs cat | sed '/^\s*$/d' | wc -l
+git ls-files | xargs cat | grep -i -c def | wc -w
+git diff --shortstat cba196ffb88501aa2ce087f75e5847c828f08087 3ecf5d05bddc8ff990681a536d7dc48c7cdfa94e
+git clone git@github.com:samteo/my-python-project.git
+def get_size():
+    import os
+    p=os.getcwd()+'\\my-python-project'
+    total_size=0
+    for f in os.listdir(p):
+        if os.path.isfile(p+'\\'+f):
+            total_size += os.path.getsize(p+'\\'+f)
+        else:
+            for s in os.listdir(p+'\\'+f):
+                if os.path.isfile(p+'\\'+f+'\\'+s):
+                    total_size += os.path.getsize(p+'\\'+f+'\\'+s)
+    
+    total_size_in_MB = total_size/1000000      
+    return  total_size_in_MB
+
+
+
+
+
+
+
+
+
 import pandas as pd
 import numpy as np
 import yfinance as yf
+from scipy.stats import norm
+import scipy.optimize as sco
 stock = ['AAPL','IBM','GOOG','BP','XOM','COST','GS']
-weight = [0.15,0.2,0.2,0.15,0.1,0.15,0.05]
+weight = np.array([0.15,0.2,0.2,0.15,0.1,0.15,0.05])
 data = pd.DataFrame()
 for i in stock:
     msft = yf.Ticker(i)
@@ -30,8 +64,11 @@ for i in stock:
     returns = hist.pct_change()
     data[i] = returns
 data=data.dropna()    
-data['portfolio'] = data.dot(weight)
 
+meanReturns = data.mean()
+stdReturns = data.std()
+covMatrix = data.cov()
+data['portfolio'] = data.dot(weight)
 
 def historicalVaR(returns, alpha=5):
     """
@@ -66,14 +103,58 @@ def historicalCVaR(returns, alpha=5):
     else:
         raise TypeError("Expected returns to be dataframe or series")
 
+def portfolioPerformance(weights, meanReturns, covMatrix, Time):
+    returns = np.sum(meanReturns*weights)*Time
+    std = np.sqrt( np.dot(weights.T, np.dot(covMatrix, weights)) ) * np.sqrt(Time)
+    return returns, std
+
+pRet,pStd = portfolioPerformance(weight, meanReturns, covMatrix, 252)
+
+
+
+def var_parametric(portofolioReturns, portfolioStd, alpha=5):
+    VaR = norm.ppf(1-alpha/100)*portfolioStd - portofolioReturns
+    return VaR
+
+def cvar_parametric(portofolioReturns, portfolioStd, alpha=5):
+    CVaR = (alpha/100)**-1 * norm.pdf(norm.ppf(alpha/100))*portfolioStd - portofolioReturns
+    return CVaR
+
+var_p = var_parametric(pRet,pStd, alpha=5)
+cvar_p = cvar_parametric(pRet,pStd, alpha=5)
 
 
 
 
 
 
+def calc_portfolio_std(weight, meanReturns, covMatrix):
+    portfolio_std = np.sqrt(np.dot(weight.T, np.dot(covMatrix, weight))) * np.sqrt(252)
+    return portfolio_std
+def min_variance(meanReturns, covMatrix):
+    num_assets = len(meanReturns)
+    args = (meanReturns, covMatrix)
+    constraints = ({'type': 'eq', 'fun': lambda x: np.sum(x) - 1})
+    bound = (0.0,1.0)
+    bounds = tuple(bound for asset in range(num_assets))
+    result = sco.minimize(calc_portfolio_std, num_assets*[1./num_assets,], args=args,
+                        method='SLSQP', bounds=bounds, constraints=constraints)
+    return result
+min_port_variance = min_variance(meanReturns, covMatrix)
+
+pd.DataFrame([round(x,2) for x in min_port_variance['x']],index=tickers).T
+
+
+data=data.drop(columns=['portfolio'])
+for i in range(1,13):
+    eachMonth = '2016-'+'%02d'%i
+    eachMonthData = data.loc[eachMonth]
+    meanReturnMonthly = eachMonthData.mean()
+    stdReturnMonthly= eachMonthData.std()
+    print(meanReturnMonthly,stdReturnMonthly)
     
- 
+
+
 
 
 
