@@ -337,7 +337,7 @@ Output:
 git clone git@github.com:samteo/my-python-project.git
 def get_size():
     import os
-    p=os.getcwd()+'\\my-python-project' 
+    p=os.getcwd()
     total_size=0
     for f in os.listdir(p):
         if os.path.isfile(p+'\\'+f):
@@ -352,6 +352,7 @@ def get_size():
 print(get_size())
 '''
 Output:
+0.012322MB
 '''
 '''----------------------------------------------------------------------------------------'''
 
