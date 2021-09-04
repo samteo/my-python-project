@@ -4,7 +4,7 @@ Created on Wed Sep  1 13:14:14 2021
 
 @author: samte
 """
-'Question 1'
+'''Question 1'''
 #a
 import pandas as pd
 import numpy as np
@@ -32,9 +32,9 @@ print(avg_salary)
 #Ans:
 # 425.0
 
-'----------------------------------------------------------------------------------------'
+'''----------------------------------------------------------------------------------------'''
 
-'Question 2'
+'''Question 2'''
 def exist():
     if 'v' in globals():
         return print('v is defined')
@@ -42,9 +42,8 @@ def exist():
         return print('v is not defined')        
 exist()
 
-'----------------------------------------------------------------------------------------'
-
-'Question 3'
+'''----------------------------------------------------------------------------------------'''
+'''Question 3'''
 def pascals_triangle(n_layers):
     result=[]
     for n in range(n_layers):
@@ -58,9 +57,238 @@ def pascals_triangle(n_layers):
            
 pascals_triangle(6)
    
-'----------------------------------------------------------------------------------------'
+'''----------------------------------------------------------------------------------------'''
 
-'Question 5'
+'''Question 4'''
+import pandas as pd
+import numpy as np
+import yfinance as yf
+from scipy.stats import norm
+import scipy.optimize as sco
+stock = ['AAPL','IBM','GOOG','BP','XOM','COST','GS']
+weight = np.array([0.15,0.2,0.2,0.15,0.1,0.15,0.05])
+data = pd.DataFrame()
+for i in stock:
+    msft = yf.Ticker(i)
+    hist = msft.history(start="2016-01-01",end="2016-12-31")
+    hist = hist[['Close']]
+    returns = hist.pct_change()
+    data[i] = returns
+data=data.dropna()    
+
+meanReturns = data.mean()
+stdReturns = data.std()
+covMatrix = data.cov()
+data['portfolio'] = data.dot(weight)
+
+
+#a
+def historicalVaR(returns, alpha=5):
+    """
+    Read in a pandas dataframe of returns / a pandas series of returns
+    Output the percentile of the distribution at the given alpha confidence level
+    """
+    if isinstance(returns, pd.Series):
+        return np.percentile(returns, alpha)
+
+    # A passed user-defined-function will be passed a Series for evaluation.
+    elif isinstance(returns, pd.DataFrame):
+        return returns.aggregate(historicalVaR, alpha=alpha)
+
+    else:
+        raise TypeError("Expected returns to be dataframe or series")
+
+
+def historicalCVaR(returns, alpha=5):
+    """
+    Read in a pandas dataframe of returns / a pandas series of returns
+    Output the CVaR for dataframe / series
+    """
+    if isinstance(returns, pd.Series):
+        belowVaR = returns <= historicalVaR(returns, alpha=alpha)
+        return returns[belowVaR].mean()
+
+    # A passed user-defined-function will be passed a Series for evaluation.
+    elif isinstance(returns, pd.DataFrame):
+        return returns.aggregate(historicalCVaR, alpha=alpha)
+
+    else:
+        raise TypeError("Expected returns to be dataframe or series")
+        
+historicalVaR(returns=data['portfolio'], alpha=5)        
+historicalCVaR(returns=data['portfolio'], alpha=5)
+
+
+#b
+def portfolioPerformance(weights, meanReturns, covMatrix, Time):
+    returns = np.sum(meanReturns*weights)*Time
+    std = np.sqrt( np.dot(weights.T, np.dot(covMatrix, weights)) ) * np.sqrt(Time)
+    return returns, std
+
+pRet,pStd = portfolioPerformance(weight, meanReturns, covMatrix, 252)
+
+
+
+def var_parametric(portofolioReturns, portfolioStd, alpha=5):
+    VaR = norm.ppf(1-alpha/100)*portfolioStd - portofolioReturns
+    return VaR
+
+def cvar_parametric(portofolioReturns, portfolioStd, alpha=5):
+    CVaR = (alpha/100)**-1 * norm.pdf(norm.ppf(alpha/100))*portfolioStd - portofolioReturns
+    return CVaR
+
+var_p = var_parametric(pRet,pStd, alpha=5)
+cvar_p = cvar_parametric(pRet,pStd, alpha=5)
+
+
+
+
+
+
+#c
+
+import numpy as np
+import pandas as pd
+from pandas_datareader import data
+import matplotlib.pyplot as plt
+
+
+df_data = data.DataReader(['AAPL','IBM','GOOG','BP','XOM','COST','GS'], 'yahoo', start='2016/01/01', end='2016/12/31')
+df_data  = df_data['Adj Close']
+df_data.head()
+
+for m in range(1,13):
+    eachMonth = '2016-'+'%02d'%m
+    df = df_data.loc[eachMonth]
+    df_pct_change_all=df.pct_change().dropna()
+    
+    df_mean =  df_pct_change_all.mean()
+    df_positive=df_mean[df_mean>0]
+    df_negative=df_mean[df_mean<0]
+    group = [df_positive.index.tolist(),df_negative.index.tolist()]
+    for g in group:
+
+            
+        df_pct_change=df_pct_change_all[g].dropna()
+        if group.index(g)==1:
+            # group to short
+            df_pct_change=df_pct_change*-1
+                    
+        cov_matrix = df_pct_change.cov()
+        cov_matrix
+    
+        corr_matrix = df_pct_change.corr()
+        corr_matrix
+        weights = np.random.random(len(g))
+        weights/=np.sum(weights)
+        
+        w = {g[i]:weights[i] for i,o in enumerate(g)}
+        
+        # w = {'AAPL': weights[0], 'IBM': weights[1], 'GOOG': weights[2], 'BP': weights[3],'XOM':weights[4],'COST':weights[5],'GS':weights[6]}
+        port_var = cov_matrix.mul(w, axis=0).mul(w, axis=1).sum().sum()
+        port_var
+    
+        ind_er = df_pct_change.mean()
+        ind_er
+        
+        w = list(weights)
+        port_er = (w*ind_er).sum()
+        port_er
+        
+        ann_sd = df_pct_change.std().apply(lambda x: x*np.sqrt(19))
+        ann_sd
+        
+        assets = pd.concat([ind_er, ann_sd], axis=1) # Creating a table for visualising returns and volatility of assets
+        assets.columns = ['Returns', 'Volatility']
+        assets
+        
+        p_ret = [] # Define an empty array for portfolio returns
+        p_vol = [] # Define an empty array for portfolio volatility
+        p_weights = [] # Define an empty array for asset weights
+        
+        num_assets = len(g)
+        num_portfolios = 100
+        
+        for portfolio in range(num_portfolios):
+            weights = np.random.random(num_assets)
+            weights = weights/np.sum(weights)
+            p_weights.append(weights)
+            returns = np.dot(weights, ind_er) # Returns are the product of individual expected returns of asset and its 
+                                              # weights 
+            p_ret.append(returns)
+            var = cov_matrix.mul(weights, axis=0).mul(weights, axis=1).sum().sum()# Portfolio Variance
+            sd = np.sqrt(var) # Daily standard deviation
+            ann_sd = sd*np.sqrt(19) # Annual standard deviation = volatility
+            p_vol.append(ann_sd)
+        data = {'Returns':p_ret, 'Volatility':p_vol}
+        
+        for counter, symbol in enumerate(g):
+            #print(counter, symbol)
+            data[symbol+' weight'] = [w[counter] for w in p_weights]
+        
+        portfolios  = pd.DataFrame(data)
+        portfolios.head() # Dataframe of the 10000 portfolios created
+        # Plot efficient frontier
+        # portfolios.plot.scatter(x='Volatility', y='Returns', marker='o', s=10, alpha=0.3, grid=True, figsize=[10,10])
+        min_vol_port = portfolios.iloc[portfolios['Volatility'].idxmin()]
+        # idxmin() gives us the minimum value in the column specified. 
+        if group.index(g)==0:                             
+            print('Month {} (Long)'.format(m))
+        else:
+            print('Month {} (Short)'.format(m))
+        print(min_vol_port)
+        # plt.subplots(figsize=[10,10])
+        # plt.scatter(portfolios['Volatility'], portfolios['Returns'],marker='o', s=10, alpha=0.3)
+        # plt.scatter(min_vol_port[1], min_vol_port[0], color='r', marker='*', s=500)
+        
+'''
+The idea come from https://www.machinelearningplus.com/machine-learning/portfolio-optimization-python-example/,
+but I revamped it to a version that can be used in LONG and SHORT scenarios. I am not sure if it can be used in practical
+Assumption: You have to defined how much of portion of money you want to perform LONG or SHORT in that month.
+            The sum of the weights in LONG or SHORT which are showing below is 1 respectively.
+Output :
+    
+Month 1 (Long)
+Returns        0.000400
+Volatility     0.088244
+GOOG weight    0.617486
+BP weight      0.001580
+XOM weight     0.380934
+
+Month 1 (Short)
+Returns        0.003940
+Volatility     0.062892
+AAPL weight    0.085117
+IBM weight     0.499776
+COST weight    0.371804
+GS weight      0.043303
+
+        ...
+        ...
+        
+Month 12 (Long)
+Returns        0.002458
+Volatility     0.022177
+AAPL weight    0.113112
+IBM weight     0.091965
+GOOG weight    0.122320
+BP weight      0.289261
+XOM weight     0.106204
+COST weight    0.075574
+GS weight      0.201563
+
+Month 12 (Short)
+Returns       0.0
+Volatility    0.0
+
+
+'''        
+        
+        
+
+'''----------------------------------------------------------------------------------------'''
+
+'''Question 5'''
 #a
 git ls-files "./*.py" | wc -l
 #b
@@ -87,9 +315,9 @@ def get_size():
     return  total_size_in_MB
 print(get_size())
 
-'----------------------------------------------------------------------------------------'
+'''----------------------------------------------------------------------------------------'''
 
-'Question 6'
+'''Question 6'''
 import re
 text = '2009/09/04 or 12/24/2009 or 04/12/2009 or 19 Jan 1992 or 19 Sept 1992'
 date_reg_exp1 = re.compile('\d{4}[/]\d{2}[/]\d{2}')
