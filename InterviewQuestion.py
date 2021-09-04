@@ -19,18 +19,23 @@ for i in manager:
         employee= t[t['Manager_id']==i]['Salary']
         salary_higher = (employee[employee> t.loc[i,'Salary']]).index.item()
         print('Employee {} salary is higher than his manager'.format(t.loc[salary_higher,'Name']))
-#Ans:
-# Employee Dan salary is higher than his manager
-# Employee Sally salary is higher than his manager
-# Employee Joe salary is higher than his manager
+'''
+Output:        
+
+Employee Dan salary is higher than his manager
+Employee Sally salary is higher than his manager
+Employee Joe salary is higher than his manager
+'''
 
 #b
 manager = set(manager)
 not_manager=set(t.index).difference(manager)
 avg_salary = t[t.index.isin(not_manager)]['Salary'].mean()
 print(avg_salary)
-#Ans:
-# 425.0
+'''
+Output:        
+425.0
+'''
 
 '''----------------------------------------------------------------------------------------'''
 
@@ -42,7 +47,13 @@ def exist():
         return print('v is not defined')        
 exist()
 
+'''
+Output:        
+v is not defined
+'''
+
 '''----------------------------------------------------------------------------------------'''
+
 '''Question 3'''
 def pascals_triangle(n_layers):
     result=[]
@@ -56,10 +67,20 @@ def pascals_triangle(n_layers):
         print(row)
            
 pascals_triangle(6)
-   
+'''
+Output:
+[1]
+[1, 1]
+[1, 2, 1]
+[1, 3, 3, 1]
+[1, 4, 6, 4, 1]
+[1, 5, 10, 10, 5, 1] 
+'''
+
 '''----------------------------------------------------------------------------------------'''
 
 '''Question 4'''
+#Getting the data
 import pandas as pd
 import numpy as np
 import yfinance as yf
@@ -69,8 +90,8 @@ stock = ['AAPL','IBM','GOOG','BP','XOM','COST','GS']
 weight = np.array([0.15,0.2,0.2,0.15,0.1,0.15,0.05])
 data = pd.DataFrame()
 for i in stock:
-    msft = yf.Ticker(i)
-    hist = msft.history(start="2016-01-01",end="2016-12-31")
+    stockData = yf.Ticker(i)
+    hist = stockData.history(start="2016-01-01",end="2016-12-31")
     hist = hist[['Close']]
     returns = hist.pct_change()
     data[i] = returns
@@ -142,9 +163,6 @@ cvar_p = cvar_parametric(pRet,pStd, alpha=5)
 
 
 
-
-
-
 #c
 
 import numpy as np
@@ -157,7 +175,7 @@ df_data = data.DataReader(['AAPL','IBM','GOOG','BP','XOM','COST','GS'], 'yahoo',
 df_data  = df_data['Adj Close']
 df_data.head()
 
-for m in range(1,13):
+for m in range(1,13): #iterate each months
     eachMonth = '2016-'+'%02d'%m
     df = df_data.loc[eachMonth]
     df_pct_change_all=df.pct_change().dropna()
@@ -243,7 +261,8 @@ for m in range(1,13):
         
 '''
 The idea come from https://www.machinelearningplus.com/machine-learning/portfolio-optimization-python-example/,
-but I revamped it to a version that can be used in LONG and SHORT scenarios. I am not sure if it can be used in practical
+but I revamped it to a version that can be used in LONG and SHORT scenarios. 
+With my limitated knowledge in financal backgroud, I am not sure if it can be used in practical but it is what i have from my research.
 Assumption: You have to defined how much of portion of money you want to perform LONG or SHORT in that month.
             The sum of the weights in LONG or SHORT which are showing below is 1 respectively.
 Output :
@@ -289,19 +308,36 @@ Volatility    0.0
 '''----------------------------------------------------------------------------------------'''
 
 '''Question 5'''
+'''Clone the git repo and perform these command in git bash'''
 #a
 git ls-files "./*.py" | wc -l
+'''
+Output:
+1
+'''
 #b
 git ls-files | xargs cat | sed '/^\s*$/d' | wc -l
+'''
+Output:
+265
+'''
 #c
-git ls-files | xargs cat | grep -i -c def | wc -w
+git ls-files | xargs cat | grep -i -o '\<def\>' | wc -w
+'''
+Output:
+9
+'''
 #d
 git diff --shortstat cba196ffb88501aa2ce087f75e5847c828f08087 3ecf5d05bddc8ff990681a536d7dc48c7cdfa94e
+'''
+Output:
+ 1 file changed, 3 insertions(+), 84 deletions(-)
+'''
 #e
 git clone git@github.com:samteo/my-python-project.git
 def get_size():
     import os
-    p=os.getcwd()+'\\repo\\firstfolder'  #'\\my-python-project'
+    p=os.getcwd()+'\\repo\\my-python-project' 
     total_size=0
     for f in os.listdir(p):
         if os.path.isfile(p+'\\'+f):
@@ -314,7 +350,9 @@ def get_size():
     total_size_in_MB = total_size/1000000      
     return  total_size_in_MB
 print(get_size())
-
+'''
+Output:
+'''
 '''----------------------------------------------------------------------------------------'''
 
 '''Question 6'''
@@ -332,7 +370,10 @@ for r in regex_list:
         date.append(m)
 
 print('Number of appearance:',len(date))
-
+'''
+Output:
+Number of appearance: 5    
+'''
 
 
 
