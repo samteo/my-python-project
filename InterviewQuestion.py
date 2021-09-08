@@ -42,14 +42,14 @@ Output:
 '''Question 2'''
 def exist():
     if 'v' in globals():
-        return print('v is defined')
+        return True
     else:
-        return print('v is not defined')        
+        return False 
 exist()
 
 '''
 Output:        
-v is not defined
+False
 '''
 
 '''----------------------------------------------------------------------------------------'''
@@ -64,17 +64,17 @@ def pascals_triangle(n_layers):
             row.extend([sum(p) for p in zip(last_row,last_row[1:])])
             row.append(1)
         result.append(row)
-        print(row)
-           
+        # print(str(row))
+        print(' '.join(map(str, row)))    
 pascals_triangle(6)
 '''
 Output:
-[1]
-[1, 1]
-[1, 2, 1]
-[1, 3, 3, 1]
-[1, 4, 6, 4, 1]
-[1, 5, 10, 10, 5, 1] 
+1
+1 1
+1 2 1
+1 3 3 1
+1 4 6 4 1
+1 5 10 10 5 1
 '''
 
 '''----------------------------------------------------------------------------------------'''
@@ -95,12 +95,12 @@ for i in stock:
     hist = hist[['Close']]
     returns = hist.pct_change()
     data[i] = returns
-data=data.dropna()    
+data=data.dropna(axis=0,how='all')    
 
 meanReturns = data.mean()
 stdReturns = data.std()
 covMatrix = data.cov()
-data['portfolio'] = data.dot(weight)
+portfolio = data.dot(weight)
 
 
 #a
@@ -136,14 +136,14 @@ def historicalCVaR(returns, alpha=5):
     else:
         raise TypeError("Expected returns to be dataframe or series")
         
-historicalVaR(returns=data['portfolio'], alpha=5)        
-historicalCVaR(returns=data['portfolio'], alpha=5)
+historicalVaR(returns=portfolio , alpha=5)        
+historicalCVaR(returns=portfolio , alpha=5)
 
 
 #b
-def portfolioPerformance(weights, meanReturns, covMatrix, Time):
-    returns = np.sum(meanReturns*weights)*Time
-    std = np.sqrt( np.dot(weights.T, np.dot(covMatrix, weights)) ) * np.sqrt(Time)
+def portfolioPerformance(weight, meanReturns, covMatrix, Time):
+    returns = np.sum(meanReturns*weight)*Time
+    std = np.sqrt( np.dot(weight.T, np.dot(covMatrix, weight)) ) * np.sqrt(Time)
     return returns, std
 
 pRet,pStd = portfolioPerformance(weight, meanReturns, covMatrix, 252)
@@ -178,7 +178,7 @@ df_data.head()
 for m in range(1,13): #iterate each months
     eachMonth = '2016-'+'%02d'%m
     df = df_data.loc[eachMonth]
-    df_pct_change_all=df.pct_change().dropna()
+    df_pct_change_all=df.pct_change().apply(lambda x: np.log(1+x)).dropna()
     
     df_mean =  df_pct_change_all.mean()
     df_positive=df_mean[df_mean>0]
@@ -213,10 +213,10 @@ for m in range(1,13): #iterate each months
         port_er = (w*ind_er).sum()
         port_er
         
-        ann_sd = df_pct_change.std().apply(lambda x: x*np.sqrt(19))
-        ann_sd
+        month_sd = df_pct_change.std().apply(lambda x: x*np.sqrt(19))
+        month_sd
         
-        assets = pd.concat([ind_er, ann_sd], axis=1) # Creating a table for visualising returns and volatility of assets
+        assets = pd.concat([ind_er, month_sd], axis=1) # Creating a table for visualising returns and volatility of assets
         assets.columns = ['Returns', 'Volatility']
         assets
         
@@ -236,8 +236,8 @@ for m in range(1,13): #iterate each months
             p_ret.append(returns)
             var = cov_matrix.mul(weights, axis=0).mul(weights, axis=1).sum().sum()# Portfolio Variance
             sd = np.sqrt(var) # Daily standard deviation
-            ann_sd = sd*np.sqrt(19) # Annual standard deviation = volatility
-            p_vol.append(ann_sd)
+            month_sd = sd*np.sqrt(19) # Annual standard deviation = volatility
+            p_vol.append(month_sd)
         data = {'Returns':p_ret, 'Volatility':p_vol}
         
         for counter, symbol in enumerate(g):
@@ -322,7 +322,7 @@ Output:
 265
 '''
 #c
-git ls-files | xargs cat | grep -i -o '\<def\>' | wc -w
+git ls-files | xargs cat | grep -i -o '\<def\>' | wc -l
 '''
 Output:
 9
@@ -358,7 +358,7 @@ Output:
 
 '''Question 6'''
 import re
-text = '2009/09/04 or 12/24/2009 or 04/12/2009 or 19 Jan 1992 or 19 Sept 1992'
+text = '2009/09/04 or 12/24/2009 or 04/12/2009 or 19 Jan 1992 or 19 Sept 1992 04/12/21 '
 date_reg_exp1 = re.compile('\d{4}[/]\d{2}[/]\d{2}')
 date_reg_exp2 = re.compile('\d{2}[/]\d{2}[/]\d{4}')
 date_reg_exp3 = re.compile('\d{2}\s[A-Z]+[a-z]{2,3}\s\d{4}')
@@ -381,7 +381,21 @@ Number of appearance: 5
 
 
 
+'''Question 6'''
+import re
+text = '01/01/2000'
+date_reg_exp1 = re.compile(r"^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]|(?:Jan|Mar|May|Jul|Aug|Oct|Dec)))\1|(?:(?:29|30)(\/|-|\.)(?:0?[1,3-9]|1[0-2]|(?:Jan|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec))\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)(?:0?2|(?:Feb))\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9]|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep))|(?:1[0-2]|(?:Oct|Nov|Dec)))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$")
 
+
+regex_list = [date_reg_exp1]
+date=[]
+
+for r in regex_list:
+    matches_list=r.findall(text)
+    for m in matches_list:
+        date.append(m)
+
+print('Number of appearance:',len(date))
 
 
 
