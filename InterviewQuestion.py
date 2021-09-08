@@ -86,6 +86,7 @@ import numpy as np
 import yfinance as yf
 from scipy.stats import norm
 import scipy.optimize as sco
+import seaborn as sns
 stock = ['AAPL','IBM','GOOG','BP','XOM','COST','GS']
 weight = np.array([0.15,0.2,0.2,0.15,0.1,0.15,0.05])
 data = pd.DataFrame()
@@ -135,6 +136,8 @@ def historicalCVaR(returns, alpha=5):
 
     else:
         raise TypeError("Expected returns to be dataframe or series")
+
+
         
 historicalVaR(returns=portfolio , alpha=5)        
 historicalCVaR(returns=portfolio , alpha=5)
@@ -151,13 +154,13 @@ pRet,pStd = portfolioPerformance(weight, meanReturns, covMatrix, 252)
 
 
 def var_parametric(portofolioReturns, portfolioStd, alpha=5):
-    VaR = norm.ppf(1-alpha/100)*portfolioStd - portofolioReturns
+    VaR =  portofolioReturns - norm.ppf(1-alpha/100)*portfolioStd
     return VaR
 
 def cvar_parametric(portofolioReturns, portfolioStd, alpha=5):
-    CVaR = (alpha/100)**-1 * norm.pdf(norm.ppf(alpha/100))*portfolioStd - portofolioReturns
+    CVaR =  portofolioReturns - (alpha/100)**-1 * norm.pdf(norm.ppf(alpha/100))*portfolioStd
     return CVaR
-
+sns.displot(portfolio)
 var_p = var_parametric(pRet,pStd, alpha=5)
 cvar_p = cvar_parametric(pRet,pStd, alpha=5)
 
